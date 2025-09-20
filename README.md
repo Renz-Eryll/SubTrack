@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./public/SubTrack.svg" alt="SubTrack" width="800"/>
+  <img src="./server/public/SubTrack.svg" alt="SubTrack" width="800"/>
 </p>
 
 ##

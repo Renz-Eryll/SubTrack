@@ -1,11 +1,8 @@
 import dayjs from "dayjs";
-import { createRequire } from "module";
 import Subscription from "../models/subscription.model.js";
 import { sendReminderEmail } from "../utils/send-email.js";
-
-const require = createRequire(import.meta.url);
 // serve() verifies the Upstash signature when QSTASH_CURRENT_SIGNING_KEY / QSTASH_NEXT_SIGNING_KEY are set.
-const { serve } = require("@upstash/workflow/express");
+import { serve } from "@upstash/workflow/express";
 
 const REMINDERS = [7, 5, 2, 1];
 

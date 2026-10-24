@@ -1,4 +1,15 @@
 import mongoose from "mongoose";
+import dayjs from "dayjs";
+
+const PERIOD_UNITS = { daily: "day", weekly: "week", monthly: "month", yearly: "year" };
+
+// First renewal on or after today, counting whole periods from the start date.
+export const nextRenewalDate = (startDate, frequency) => {
+  const unit = PERIOD_UNITS[frequency];
+  const start = dayjs(startDate);
+  const periods = Math.max(1, Math.ceil(dayjs().startOf("day").diff(start, unit, true)));
+  return start.add(periods, unit).toDate();
+};
 
 const subscriptionSchema = new mongoose.Schema(
   {
@@ -16,12 +27,13 @@ const subscriptionSchema = new mongoose.Schema(
     },
     currency: {
       type: String,
-      enum: ["USD", "EUR", "GBP"],
+      enum: ["USD", "EUR", "GBP", "PHP"],
       default: "USD",
     },
     frequency: {
       type: String,
       enum: ["daily", "weekly", "monthly", "yearly"],
+      required: [true, "Billing frequency is required"],
     },
     category: {
       type: String,
@@ -52,7 +64,7 @@ const subscriptionSchema = new mongoose.Schema(
       required: true,
       validate: {
         validator: (value) => value <= new Date(),
-        message: "Start date must be in the past",
+        message: "Start date can't be in the future",
       },
     },
     renewalDate: {
@@ -71,30 +83,31 @@ const subscriptionSchema = new mongoose.Schema(
       index: true,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: {
+      transform: (doc, ret) => {
+        delete ret.__v;
+        return ret;
+      },
+    },
+  },
 );
 
-// Auto-calculate renewal date if missing.
-subscriptionSchema.pre("save", function (next) {
-  if (!this.renewalDate) {
-    const renewalPeriods = {
-      daily: 1,
-      weekly: 7,
-      monthly: 30,
-      yearly: 365,
-    };
-
-    this.renewalDate = new Date(this.startDate);
-    this.renewalDate.setDate(
-      this.renewalDate.getDate() + renewalPeriods[this.frequency]
-    );
+// Fill in (or recompute) the next renewal date when the billing schedule changes.
+subscriptionSchema.pre("validate", function (next) {
+  const scheduleChanged = this.isModified("startDate") || this.isModified("frequency");
+  if (this.startDate && this.frequency && (!this.renewalDate || (scheduleChanged && !this.isModified("renewalDate")))) {
+    this.renewalDate = nextRenewalDate(this.startDate, this.frequency);
   }
+  next();
+});
 
-  // Auto-update the status if renewal date has passed
-  if (this.renewalDate < new Date()) {
+// A renewal date explicitly set in the past means the subscription has lapsed.
+subscriptionSchema.pre("save", function (next) {
+  if (this.status === "active" && this.renewalDate < dayjs().startOf("day").toDate()) {
     this.status = "expired";
   }
-
   next();
 });
 

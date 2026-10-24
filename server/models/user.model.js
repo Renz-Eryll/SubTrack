@@ -15,15 +15,26 @@ const userSchema = new mongoose.Schema(
       unique: true,
       trim: true,
       lowercase: true,
-      match: [/.+\@.+\..+/, "Please fill a valid email address"],
+      match: [/^\S+@\S+\.\S+$/, "Please fill a valid email address"],
     },
     password: {
       type: String,
       required: [true, "User password is required"],
       minlength: 6,
+      // Never returned unless a query asks for it with .select("+password").
+      select: false,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: {
+      transform: (doc, ret) => {
+        delete ret.password;
+        delete ret.__v;
+        return ret;
+      },
+    },
+  },
 );
 
 const User = mongoose.model("User", userSchema);

@@ -8,79 +8,76 @@
   <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white"/>
   <img src="https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white"/>
   <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white"/>
+  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB"/>
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white"/>
 </p>
 
 <h1 align="center">SubTrack</h1>
 
 <p align="center">
-  A <b>backend API</b> for managing subscriptions with <b> users</b>, <b>money</b>, and <b> business logic</b>.  
-  Includes JWT authentication, database modeling, security mechanisms, automated workflows, and email notifications.
+  Track every subscription, renewal date and monthly cost in one place.<br/>
+  An Express + MongoDB API with JWT auth, rate limiting and automated email reminders, plus a React dashboard.
 </p>
 
 ---
 
 ## ✨ Features
 
-- 🔐 **JWT Authentication** – Secure login, user CRUD, and subscription management
-- 🗄 **Database Modeling** – MongoDB with Mongoose for models & relationships
-- 🛡 **Rate Limiting & Bot Protection** – Arcjet integration to secure the app
-- ⚡ **Global Error Handling** – Centralized error handling and validation middleware
-- 📜 **Logging Mechanisms** – Debugging and monitoring support
-- 📧 **Email Reminders** – Automated workflows via **Upstash QStash** + Nodemailer
-- 🧩 **Scalable Architecture** – Code structured for reusability and maintainability
+- 📊 **Dashboard** – Monthly and yearly spend, upcoming renewals and a filterable subscription list
+- 🔐 **JWT Authentication** – Sign up, sign in, and self-service account updates and deletion
+- 🧾 **Subscription Management** – Create, edit, cancel and delete, with next renewal dates calculated automatically
+- 🛡 **Rate Limiting & Bot Protection** – Arcjet shield, bot detection and token-bucket rate limiting
+- 📧 **Email Reminders** – Upstash Workflow sends reminders 7, 5, 2 and 1 days before each renewal
+- ⚡ **Centralized Error Handling** – Consistent JSON errors with proper status codes
+
+---
+
+## 🗂 Project Structure
+
+```
+api/       Vercel function entry (wraps the Express app)
+client/    React 19 + TypeScript + Vite + Tailwind CSS dashboard
+server/    Express API: routes, controllers, Mongoose models, workflows
+```
+
+On Vercel both ship as one project: the dashboard is served statically and `/api/*` runs the Express app as a serverless function.
 
 ---
 
 ## ⚡ Quick Start
 
-Follow these steps to run the project locally.
-
-### 1️⃣ Clone the repository
 ```bash
 git clone https://github.com/Renz-Eryll/SubTrack.git
+cd SubTrack
+npm install                                              # installs server + client (npm workspaces)
+cp server/.env.example server/.env.development.local     # then fill in your keys
+npm run dev                                              # API on :5500, dashboard on :5173
 ```
 
-### 2️⃣ Install dependencies
-```bash
-npm install
-```
+| Script | What it does |
+| --- | --- |
+| `npm run dev` | Runs the API and the dashboard together |
+| `npm run build` | Type-checks and builds the dashboard |
+| `npm run lint` | Lints server and client |
 
-### 3️⃣ Configure environment variables  
-Create a `.env` file in the root directory and add:
+---
 
-```env
-# PORT
-PORT=5500
-SERVER_URL="http://localhost:5500"
+## 🔌 API
 
-# ENVIRONMENT
-NODE_ENV=development
+All routes are under `/api/v1`. Protected routes need `Authorization: Bearer <token>`.
 
-# DATABASE
-DB_URI=
-
-# JWT AUTH
-JWT_SECRET=
-JWT_EXPIRES_IN="1d"
-
-# ARCJET
-ARCJET_KEY=
-ARCJET_ENV="development"
-
-# UPSTASH
-QSTASH_URL=http://127.0.0.1:8080
-QSTASH_TOKEN=
-
-# NODEMAILER
-EMAIL_PASSWORD=
-```
-
-### 4️⃣ Start the server
-```bash
-npm run dev
-```
-
-Server runs at: **http://localhost:5500**
+| Method | Route | Auth | Description |
+| --- | --- | --- | --- |
+| POST | `/auth/sign-up` | | Create an account, returns a token |
+| POST | `/auth/sign-in` | | Sign in, returns a token |
+| POST | `/auth/sign-out` | | Client discards its token |
+| GET / PUT / DELETE | `/users/:id` | ✓ | Read, update or delete your own account |
+| GET | `/subscriptions` | ✓ | Your subscriptions |
+| POST | `/subscriptions` | ✓ | Create one and schedule reminders |
+| GET | `/subscriptions/upcoming-renewals?days=7` | ✓ | Active subscriptions renewing soon |
+| GET / PUT / DELETE | `/subscriptions/:id` | ✓ | Read, update or delete one of yours |
+| PUT | `/subscriptions/:id/cancel` | ✓ | Mark as cancelled (stops reminders) |
+| GET | `/health` | | Health check |
 
 ---
 

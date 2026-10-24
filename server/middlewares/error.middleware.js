@@ -1,38 +1,43 @@
+import { NODE_ENV } from "../config/env.js";
+
+// eslint-disable-next-line no-unused-vars
 const errorMiddleware = (err, req, res, next) => {
-  try {
-    let error = { ...err };
+  let statusCode = err.statusCode || err.status || 500;
+  let message = err.message;
 
-    error.message = err.message;
-
-    console.error(err);
-
-    // Mongoose bad ObjectId
-    if (err.name === "CastError") {
-      const message = "Resource not found";
-      error = new Error(message);
-      error.statusCode = 404;
-    }
-
-    // Mongoose duplicate key
-    if (err.code === 11000) {
-      const message = "Duplicate field value entered";
-      error = new Error(message);
-      error.statusCode = 400;
-    }
-
-    // Mongoose validation error
-    if (err.name === "ValidationError") {
-      const message = Object.values(err.errors).map((val) => val.message);
-      error = new Error(message.join(", "));
-      error.statusCode = 400;
-    }
-
-    res
-      .status(error.statusCode || 500)
-      .json({ success: false, error: error.message || "Server Error" });
-  } catch (error) {
-    next(error);
+  // Mongoose bad ObjectId
+  if (err.name === "CastError") {
+    statusCode = 404;
+    message = "Resource not found";
   }
+
+  // Mongoose duplicate key
+  if (err.code === 11000) {
+    statusCode = 409;
+    message = `${Object.keys(err.keyValue || {}).join(", ") || "Value"} already exists`;
+  }
+
+  // Mongoose validation error
+  if (err.name === "ValidationError") {
+    statusCode = 400;
+    message = Object.values(err.errors)
+      .map((val) => val.message)
+      .join(", ");
+  }
+
+  // Malformed JSON body
+  if (err.type === "entity.parse.failed") {
+    statusCode = 400;
+    message = "Invalid JSON body";
+  }
+
+  if (statusCode >= 500) {
+    console.error(err);
+    // Don't leak internals (stack traces, connection strings) in production.
+    if (NODE_ENV === "production") message = "Server Error";
+  }
+
+  res.status(statusCode).json({ success: false, error: message || "Server Error" });
 };
 
 export default errorMiddleware;

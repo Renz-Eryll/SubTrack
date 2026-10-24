@@ -7,8 +7,12 @@ import { serve } from "@upstash/workflow/express";
 const REMINDERS = [7, 5, 2, 1];
 
 const fetchSubscription = (context, subscriptionId, label = "get subscription") =>
-  // Step results are stored as JSON by Upstash, so return a plain object (lean), not a Mongoose document.
-  context.run(label, () => Subscription.findById(subscriptionId).populate("user", "name email").lean());
+  // Upstash stores step results as JSON: await the query (a Mongoose Query is only thenable,
+  // and would be serialized itself) and return plain data via lean().
+  context.run(label, async () => {
+    const subscription = await Subscription.findById(subscriptionId).populate("user", "name email").lean().exec();
+    return subscription ? JSON.parse(JSON.stringify(subscription)) : null;
+  });
 
 export const sendReminders = serve(async (context) => {
   const { subscriptionId } = context.requestPayload;

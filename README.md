@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white"/>
 </p>
 
-<h1 align="center">SubTrack</h1>
+<h1 align="center">💳 SubTrack</h1>
 
 <p align="center">
   Track every subscription, renewal date and monthly cost in one place.<br/>
@@ -41,6 +41,12 @@ server/    Express API: routes, controllers, Mongoose models, workflows
 ```
 
 On Vercel both ship as one project: the dashboard is served statically and `/api/*` runs the Express app as a serverless function.
+
+---
+
+## 🌐 Demo
+
+🔗 **Live Demo**: [SubTrack](https://subtrack-lilac-seven.vercel.app)
 
 ---
 
